@@ -2,7 +2,9 @@
 
 Analysis code and supporting data for the accepted version of:
 
-**Single-nucleus transcriptomics reveals cellular heterogeneity and differentiation dynamics within the shoot apical meristem**
+**Single-nucleus transcriptomics resolves multiple fate dynamics between inflorescence meristem and primary stem**
+
+Moreno-Ramírez et al., 2026. 
 
 An earlier preprint version is available at bioRxiv:<br>
 <https://doi.org/10.1101/2024.08.06.606781>

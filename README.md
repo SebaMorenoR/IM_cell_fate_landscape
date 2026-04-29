@@ -1,109 +1,348 @@
-# Introduction
-This repository contains files associated with the manuscript:
+# IM Cell-Fate Landscape
 
-"Single-nucleus transcriptomics reveals cellular heterogeneity and differentiation dynamics within the shoot apical meristem"
+Analysis code and supporting data for the accepted version of:
 
-Moreno et al. (BioRxiv)
-DOI: https://doi.org/10.1101/2024.08.06.606781
+**Single-nucleus transcriptomics reveals cellular heterogeneity and differentiation dynamics within the shoot apical meristem**
 
-# Overview 
-This repository contains the analysis pipeline used to process and analyse single-nucleus RNA-seq data from the shoot apical meristem (SAM).
-The workflow includes:
-Data preprocessing and unbiased clustering
-Marker gene identification and visualization
-Gene regulatory network (GRN) inference for auxin-related clusters
-Cell-cycle trajectory analysis
-Differentiation trajectory analysis for inner SAM cell types
-Functional analysis and comparisons with published datasets
+An earlier preprint version is available at bioRxiv:<br>
+<https://doi.org/10.1101/2024.08.06.606781>
 
-All analyses are implemented in Python using Scanpy-based workflows.
+## Overview
 
-# Installation
+This repository contains Python scripts used for the accepted-version analysis of Arabidopsis shoot apical meristem single-nucleus RNA-seq data. The workflow is built mainly around Scanpy, with scFates and Palantir used for trajectory analyses.
 
-All scripts developed in this project use Python and rely on the packages indicated in the conda environments folder.
+The analyses cover:
 
-Environment for Figures 1 to 3 in conda_environments/unbiased_clustering.yml
-Example: 
-* conda env create -f conda_environments/unbiased_clustering.yml conda activate unbiased_clustering
+- preprocessing of CellBender-corrected 10x count matrices;
+- quality control, doublet removal, normalization, HVG selection, batch integration and Leiden clustering;
+- cell-type annotation and marker-gene visualization;
+- early primordia gene regulatory network analysis using TF-target evidence;
+- cell-cycle and differentiation trajectory inference;
+- gene ontology enrichment for cluster and trajectory gene sets;
+- comparisons with published Arabidopsis meristem, flower and stem-cell datasets;
+- validation plotting for the `gh3hex` mutant measurements.
 
-Environment for Figure 5 and 6: 
-* conda env create -f conda_environments/trajectory_analysis.yml conda activate trajectory_analysis
+## Repository Structure
 
-# Scripts
+```text
+.
+|-- conda_environments/
+|   |-- unbiased_clustering.yml
+|   `-- trajectory_analysis.yml
+|-- data/
+|   |-- output_cellbender_filtered_resequenced_SITTA1.h5
+|   |-- output_cellbender_filtered_resequenced_SITTC6.h5
+|   |-- output_cellbender_filtered_resequenced_SITTE2.h5
+|   |-- gene_names_for_scrna.csv
+|   |-- tf_target_database.zip
+|   `-- published comparison/reference tables
+|-- scripts/
+|   |-- unbiased_clustering.py
+|   |-- marker_genes_plotting.py
+|   |-- GRN_EarlyPrimordia.py
+|   |-- batches_analysis.py
+|   |-- cell_cycle_trajectory_analysis.py
+|   |-- internal_cell_types_trajectory_analysis.py
+|   |-- trajectory_SC_to_EP.py
+|   |-- go_analysis.py
+|   |-- comparison_studies.py
+|   `-- gh3hex_analysis.py
+`-- snuclei_run_def.py
+```
 
-To run the scripts, you first need to download the data from the University of Cambridge repository (link to be updated). Currently, all data needed to run the code is in the Data folder within this repository.
+## Environments
 
-## 1.- Input Data
-The analysis requires the CellBender-corrected count matrices generated from three sequencing libraries:
+Two Conda environments are provided because the clustering and trajectory workflows use different dependency sets.
 
-output_cellbender_filtered_resequenced_SITTA1.h5
-output_cellbender_filtered_resequenced_SITTE2.h5
-output_cellbender_filtered_resequenced_SITTC6.h5
+For preprocessing, clustering, marker genes, GO analysis and comparison plots:
 
-These correspond to the three SAM biological samples used in the study.
+```bash
+conda env create -f conda_environments/unbiased_clustering.yml
+conda activate sn_mechanics
+```
 
-Place these files inside the Data/ directory or modify the path variable in the scripts.
+For scFates/Palantir trajectory analyses:
 
-#### Output files:
+```bash
+conda env create -f conda_environments/trajectory_analysis.yml
+conda activate scFates2
+```
 
-* output_rank_genes_group_final_AGI.xlsx: Shows the top 150 marker genes per cluster. This is used for following analysis.
-* pcHVG_data_processed.h5ad: The first generated file, which is the AnnData with HVG genes after the Leiden unbiased clustering approach.
-* pcHVG_data_processed_names.h5ad: Same as before but with cluster names added.
-* adata_filtered_norm_clusters.h5ad: Contains all high-quality cells and genes with PCA information necessary for trajectory analysis.
+The environment files were exported from the analysis machines and include pinned versions. They may need light adjustment on other operating systems or CPU architectures.
 
+## Data
 
-## 2.- Marker gene visualization
-Script:
-marker_genes_plotting.py
+The repository includes three CellBender-corrected 10x HDF5 matrices:
 
-Generates visualizations for cluster-specific markers including:
-dot plots
-heatmaps
-gene expression visualizations on UMAP
+- `data/output_cellbender_filtered_resequenced_SITTA1.h5`
+- `data/output_cellbender_filtered_resequenced_SITTC6.h5`
+- `data/output_cellbender_filtered_resequenced_SITTE2.h5`
 
-## 3.- Gene Regulatory network (GRN) for auxin-related cluster (Early primordia cluster) (Figure 3).
-Script:
-GRN_EarlyPrimordia.py
+These correspond to the resequenced SAM biological samples included in the public repository data.
 
-#### Inputs:
-output_rank_genes_group_final_AGI.xlsx
-red_oficial_pares_cruce.csv
+The `data/` folder also includes:
 
-The second file contains TF-target interaction evidence.
+- `gene_names_for_scrna.csv`: mapping between Arabidopsis gene identifiers and gene names;
+- `tf_target_database.zip`: compressed TF-target evidence table used by the early primordia GRN analysis. It contains `red_oficial_pares_cruce.csv`;
+- published comparison tables from Tian 2019, Yadav 2014, Zhang 2021 and Neumann 2022;
+- `Ath_TF_list.txt` and `chip_seq_flowers.xlsx`, used by TF/target-related analyses.
 
-#### Outputs:
-tf_network_pure_evidence_EP_cluster_100.xlsx
-Network table compatible with Cytoscape for visualization.
+Some scripts refer to additional intermediate or local validation files that are not currently present in `data/`. These files are generated by earlier analysis steps or were stored locally during manuscript preparation.
 
-The script also generates the GRN plot shown in Figure 3.
+## Important Path Note
 
-## 3.- Cell-cycle trajectory analysis (Figure 5).
+Most scripts currently contain absolute paths from the original analysis workstation, for example:
 
-### a.- Differentially expressed genes along cell-cycle trajectory.
+```text
+/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/
+/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/nuclei/sequencing/
+```
 
-#### Import file: 
-* 'adata_filtered_norm_cluster.h5ad' (it was generated in the Unbaised clustering section. Cell-cycle clusters are isolated for trajectory analysis (S-phase and G2/M-phase clusters))
+Before running scripts on another machine, update these paths to the local repository and desired output directories. A practical approach is to define a project root and replace absolute paths with paths relative to this repository.
 
-#### Output file: 
-* "adata_scfates_cellcycle_fitted.h5ad" (which will be used for ploting heatmaps of differentially expressed genes and to generate "Supplementary Table", which has the heatmap DEG cell-cycle genes ordered by peak of expression )
+Also note that `scripts/unbiased_clustering.py` references a fourth input file, `output_cellbender_filtered_10Blane_SITTF1.h5`, which is not present in this repository. To run the script only with the three included libraries, remove or comment out the `data5` import and adjust the concatenation step accordingly.
 
-## 4.- Differentiation trajectories from OC to primary stem (Figure 6).
+## Main Workflow
 
-### a.- Removing cell-cycle effect to increase resolution. 
-* 'removing_cell_cycle_effect.py' (used to remove cell cycle effect and to assign new cluster that then will be used for trajectory )
-#### Import files: 
-* "adata_filtered_norm_clusters.h5ad" 
-### Output files" 
-* "adata_filtered_norm_clusters_without_cell_cycle.h5ad"
-### b.- Trajectory analysis for internal cell-types
-* "internal_cell_types_trajectory_analysis.py" function is used to obtain trajectory analysis for cortex, vasculature 1, vasculature 2, internal stem cells and early primordia clusters. 
-#### Import files: 
-* "adata_filtered_norm_clusters_without_cell_cycle.h5ad"
-#### Output files: 
+### 1. Unbiased Clustering
 
-Plots observed in Figure 6 plus several excel files with the differentially expressed genes along the different trajectories. Genes are sorted by peak of expression. 
+Script: `scripts/unbiased_clustering.py`
 
-# Contact
+This is the main preprocessing and clustering workflow. It performs:
 
-Sebastian Moreno (sebastian.moreno@slcu.cam.ac.uk)
+- import of CellBender-corrected 10x matrices;
+- sample labeling;
+- Scrublet doublet detection;
+- filtering based on detected genes, total counts and mitochondrial/chloroplast signal;
+- removal of mitochondrial and chloroplast genes;
+- normalization and log transformation;
+- optional outlier-gene filtering by comparison with bulk RNA-seq pseudo-bulk signal;
+- HVG selection with `seurat_v3`;
+- scaling and regression of technical covariates;
+- Harmony integration by sample;
+- PCA, neighbor graph construction, UMAP and Leiden clustering;
+- marker-gene testing with Wilcoxon rank-sum tests;
+- manual cluster annotation.
 
+The annotated cluster names used downstream include:
+
+- photosynthetic cells
+- cortex
+- S-phase
+- G2/M-phase
+- procambium
+- unknown 1
+- rib zone
+- stem epidermis
+- IM epidermis
+- unknown 2
+- xylem parenchyma
+- EP
+- floral identity
+- undifferentiated cells
+- pollen
+- BD
+- cell wall-related
+- stress-response
+
+Key outputs generated by this script include:
+
+- `adata_filtered.h5ad`
+- `adata_norm.h5ad`
+- `adata_filtered_norm.h5ad`
+- `pcHVG_data_proccessed.h5ad`
+- `pcHVG_data_proccessed_names.h5ad`
+- `marker_genes_reg.xlsx`
+- `marker_genes_reg_final.xlsx`
+- `marker_genes_reg_final_exclusive.xlsx`
+- `adata_filtered_norm_clusters.h5ad`
+
+Several downstream scripts expect `adata_filtered_norm_clusters.h5ad` and `marker_genes_reg_final.xlsx`.
+
+### 2. Marker-Gene Visualization
+
+Script: `scripts/marker_genes_plotting.py`
+
+Generates matrix plots and UMAP expression plots for manually selected marker sets. These include markers for epidermis, rib zone, floral identity, vasculature, internal stem cells, auxin response, cytokinin response, gibberellin response, myrosin cells, S-phase, G2/M-phase, pollen, cortex, early primordia, stress response and hypoxia-associated genes.
+
+Main inputs:
+
+- `adata_filtered_norm_clusters.h5ad`
+- `marker_genes_reg_final.xlsx`
+- curated hormone-related gene lists, where available
+- `gene_names_for_scrna.csv`
+
+### 3. Batch and Replicate Checks
+
+Script: `scripts/batches_analysis.py`
+
+Plots UMAPs split by sample and compares pseudo-bulk expression between biological replicates. It also summarizes detected genes and cluster proportions across samples.
+
+Main input:
+
+- `adata_filtered_norm_clusters.h5ad`
+
+### 4. Early Primordia GRN
+
+Script: `scripts/GRN_EarlyPrimordia.py`
+
+Builds a TF-target network for the early primordia (`EP`) cluster using marker genes and DAP-seq-supported TF-target evidence.
+
+Main inputs:
+
+- `marker_genes_reg_final.xlsx`
+- `red_oficial_pares_cruce.csv` from `tf_target_database.zip`
+- `gene_names_for_scrna.csv`
+- `adata_filtered_norm_clusters.h5ad`
+
+Main outputs:
+
+- `EP_GRN.xlsx`
+- bar plot of the top TFs by percentage of EP marker genes targeted
+
+### 5. Cell-Cycle Trajectory
+
+Script: `scripts/cell_cycle_trajectory_analysis.py`
+
+Uses the S-phase and G2/M-phase clusters to infer a cell-cycle trajectory with Palantir diffusion space and scFates principal tree fitting. The script then identifies genes associated with pseudotime, fits expression trends and orders genes by peak expression along the trajectory.
+
+Main input:
+
+- `adata_filtered_norm_clusters.h5ad`
+
+Main outputs:
+
+- `adata_scfates_cellcycle.h5ad`
+- `adata_scfates_cellcycle_subtree.h5ad`
+- `adata_scfates_cellcycle_ass.h5ad`
+- `adata_scfates_cellcycle_ass_fitted.h5ad`
+- `cell_cycle_DEG_ordered_peak_expression.xlsx`
+- GO enrichment tables for rolling windows along the cell-cycle trajectory
+- selected trajectory, gene-expression and heatmap figures
+
+### 6. Internal Cell-Type Differentiation Trajectories
+
+Script: `scripts/internal_cell_types_trajectory_analysis.py`
+
+Infers trajectories from undifferentiated cells toward internal SAM cell types. The script focuses on combinations of:
+
+- undifferentiated cells
+- xylem parenchyma
+- procambium
+- EP
+- cortex
+
+It uses Palantir diffusion maps, MAGIC imputation and scFates tree fitting, then tests for pseudotime-associated genes along individual milestones.
+
+Main input:
+
+- `adata_filtered_norm_clusters.h5ad`
+
+Main outputs include:
+
+- `adata_scfates_internal_layers.h5ad`
+- milestone-specific association and fitted `.h5ad` files
+- ordered DEG tables for cortex, xylem, xylem parenchyma, EP, phloem and cambium trajectories
+- GO enrichment tables and selected scFates trend plots
+
+### 7. Stem-Cell to Early-Primordia Trajectory
+
+Script: `scripts/trajectory_SC_to_EP.py`
+
+Runs a focused trajectory from undifferentiated/stem-cell identity to early primordia identity. Marker expression used for orientation includes genes such as `WUS`, `CLV3` and `AHP6`.
+
+Main input:
+
+- `adata_filtered_norm_clusters.h5ad`
+
+Main outputs:
+
+- `adata_scfates_SC-to-EP_layers.h5ad`
+- `adata_scfates_SC-to-EP_layersEP_association.h5ad`
+- `adata_scfates_SC-to-EP_layersEP_association_fitted.h5ad`
+- `SCtoEP_DEG_ordered_peak_expression.xlsx`
+- GO enrichment tables and selected trend plots
+
+### 8. Gene Ontology Analysis
+
+Script: `scripts/go_analysis.py`
+
+Runs g:Profiler enrichment for marker genes from each annotated cluster and plots top biological-process terms.
+
+Main input:
+
+- `marker_genes_reg_final.xlsx`
+
+Main outputs:
+
+- `GO_all_clusters.xlsx`
+- `GO_all_clusters_genes_names.xlsx`
+- GO summary plots
+
+This script uses the online g:Profiler service through `gprofiler-official`, so it requires internet access.
+
+### 9. Comparison with Published Studies
+
+Script: `scripts/comparison_studies.py`
+
+Compares the marker genes from this study with published Arabidopsis single-cell or domain-specific datasets. The script generates Sankey-style mappings and combined marker comparison tables.
+
+Included reference files in `data/` support comparisons with:
+
+- Yadav 2014
+- Tian 2019
+- Zhang 2021
+- Neumann 2022
+
+The script also contains sections for Guo 2024/2025 and Lee 2025 tables, but those files are not present in the current repository data folder.
+
+### 10. `gh3hex` Validation Plots
+
+Script: `scripts/gh3hex_analysis.py`
+
+Plots SAM size and phylotaxis/divergence-angle measurements for `gh3hex` validation experiments and runs Tukey tests with Pingouin.
+
+Inputs are local validation Excel files that are not included in this repository.
+
+## Helper Functions
+
+`snuclei_run_def.py` contains reusable helper functions for:
+
+- Scrublet doublet removal;
+- QC plotting and filtering;
+- HVG/PCA calculation;
+- UMAP and Leiden clustering;
+- gene-name conversion;
+- cell-cycle scoring;
+- estimating cell-domain marker coverage;
+- splitting floral-meristem-like and inflorescence-meristem-like nuclei.
+
+Some functions in this file also contain absolute paths to local reference files and need path updates before reuse.
+
+## Suggested Run Order
+
+For a full analysis rerun, the intended order is approximately:
+
+1. Update paths in the scripts.
+2. Run `scripts/unbiased_clustering.py` to produce the annotated AnnData object and marker tables.
+3. Run `scripts/batches_analysis.py` and `scripts/marker_genes_plotting.py` for QC, replicate and marker visualizations.
+4. Unzip `data/tf_target_database.zip` if needed, then run `scripts/GRN_EarlyPrimordia.py`.
+5. Run trajectory scripts in the `scFates2` environment:
+   - `scripts/cell_cycle_trajectory_analysis.py`
+   - `scripts/internal_cell_types_trajectory_analysis.py`
+   - `scripts/trajectory_SC_to_EP.py`
+6. Run `scripts/go_analysis.py` for cluster-level GO enrichment.
+7. Run `scripts/comparison_studies.py` for cross-study marker comparisons, after adding any missing external comparison files.
+
+## Reproducibility Notes
+
+- The scripts were written as manuscript analysis scripts rather than as a packaged command-line pipeline.
+- Several outputs are generated in absolute local directories. Update paths before running.
+- Some downstream scripts expect intermediate `.h5ad` or `.xlsx` files produced by earlier scripts.
+- Some referenced data files are not included in the repository, especially local validation measurements, selected curated hormone gene lists, bulk RNA-seq files and newer comparison-study tables.
+- Figure files produced by Scanpy/scFates are usually written to the active working directory or Scanpy's default `figures/` directory unless an absolute path is specified.
+
+## Contact
+
+Sebastian Moreno-Ramírez<br>
+sebastian.moreno@slcu.cam.ac.uk

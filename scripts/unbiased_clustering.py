@@ -57,15 +57,12 @@ data3.obs['Sample'] = 'sitte2'
 data4 = sc.read_10x_h5('/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/nuclei/re-sequencing/output_cellbender_filtered_resequenced_SITTA1.h5')
 data4.obs['Sample'] = 'sitta1'
 
-data5 = sc.read_10x_h5('/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/nuclei/re-sequencing/output_cellbender_filtered_10Blane_SITTF1.h5')
-data5.obs['Sample'] = 'sitff1'
-
 data1.var_names_make_unique()
 data3.var_names_make_unique()
 data4.var_names_make_unique()
-data5.var_names_make_unique()
+
 # %% Combine samples into one anndata
-adata = data1.concatenate(data3.concatenate(data4.concatenate(data5)))
+adata = data1.concatenate(data3.concatenate(data4))
 
 # Add GENE NAMES Only if I need to remove Ribosome genes 
 # new_list = names_changes_list(adata.var.index)

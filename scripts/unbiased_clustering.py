@@ -34,7 +34,7 @@ path = "/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/nuclei/sequencing
 
 def names_changes_list(name_list): 
     new_list = []
-    names = pd.read_csv("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/gene_names_for_scrna.csv", sep = ",", index_col = 0)
+    names = pd.read_csv("data/gene_names_for_scrna.csv", sep = ",", index_col = 0)
     for n in name_list: 
         temp1 = names[names["gene_ids"]==n]
         if len(temp1) > 0:
@@ -48,13 +48,13 @@ def names_changes_list(name_list):
 
 # %% Importing datasets 
 #  Using CELLBENDER to remove environmental reads.
-data1 = sc.read_10x_h5('/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/nuclei/re-sequencing/output_cellbender_filtered_resequenced_SITTC6.h5')  # submitted ##
+data1 = sc.read_10x_h5('data/output_cellbender_filtered_resequenced_SITTC6.h5')  # submitted ##
 data1.obs['Sample'] = 'sittc6'
 
-data3 = sc.read_10x_h5('/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/nuclei/re-sequencing/output_cellbender_filtered_resequenced_SITTE2.h5')
+data3 = sc.read_10x_h5('data/output_cellbender_filtered_resequenced_SITTE2.h5')
 data3.obs['Sample'] = 'sitte2'
 
-data4 = sc.read_10x_h5('/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/nuclei/re-sequencing/output_cellbender_filtered_resequenced_SITTA1.h5')
+data4 = sc.read_10x_h5('data/output_cellbender_filtered_resequenced_SITTA1.h5')
 data4.obs['Sample'] = 'sitta1'
 
 data1.var_names_make_unique()

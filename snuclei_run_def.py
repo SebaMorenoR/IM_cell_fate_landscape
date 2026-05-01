@@ -136,7 +136,7 @@ def umap(adata, resolution,n_pcs, n_neighbors, method, output):
 
 def names_change_dataframe(dataframe): 
     pd_temp = dataframe
-    names = pd.read_csv("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/zhang_output_shoot1_2/gene_names_for_scrna.csv", sep = ",", index_col = 0)
+    names = pd.read_csv("data/gene_names_for_scrna.csv", sep = ",", index_col = 0)
     ab = dataframe.values.tolist()
     ab = list((set([y for x in ab for y in x])))
     cleanedList = [x for x in ab if str(x) != 'nan']
@@ -227,7 +227,7 @@ def removing_outlier_clusters(adata, cluster_number):
          
 def change_names_adata(adata1): 
     # gene_desc = pd.read_csv('/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/gene_desc_location.csv', sep = ',')
-    gene_desc = pd.read_csv("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/zhang_output_shoot1_2/gene_names_for_scrna.csv", sep = ",", index_col = 0)
+    gene_desc = pd.read_csv("data/gene_names_for_scrna.csv", sep = ",", index_col = 0)
 
     # gene_desc['Gene name'] = gene_desc['Gene name'].fillna('unknown')
     new_gene_names_in_correct_order = []
@@ -278,7 +278,7 @@ def scar_ambient_denoising(adata, adata_raw):
     
 def names_changes_list(name_list): 
     new_list = []
-    names = pd.read_csv("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/zhang_output_shoot1_2/gene_names_for_scrna.csv", sep = ",", index_col = 0)
+    names = pd.read_csv("data/gene_names_for_scrna.csv", sep = ",", index_col = 0)
     for n in name_list: 
         temp1 = names[names["gene_ids"]==n]
         if len(temp1) > 0:
@@ -321,7 +321,7 @@ def coexpression_arboreto(adata_normalized, algorithm ):
     from arboreto.algo import grnboost2, genie3
     # from arboreto.utils import load_tf_names    
     data = pd.DataFrame(adata_normalized.X, columns = adata_normalized.var_names, index = adata_normalized.obs.index )
-    tf = pd.read_csv("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/zhang_output_shoot1_2/Ath_TF_list.txt", sep = "\t")
+    tf = pd.read_csv("data/Ath_TF_list.txt", sep = "\t")
     tf = tf['Gene_ID']
     if algorithm == 'grnboost2':
         network = grnboost2(expression_data=data,
@@ -343,7 +343,7 @@ def coexpression_arboreto_by_cluster(adata_normalized_with_cluster, algorithm,  
     # non_mito_genes_list = [name for name in adata.var_names if not name.startswith('MT-')]
     # atemp2 = atemp1[:, g_cluster]
     data = pd.DataFrame(atemp1.X.toarray(), columns = atemp1.var_names, index = atemp1.obs.index )
-    tf = pd.read_csv("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/zhang_output_shoot1_2/Ath_TF_list.txt", sep = "\t")
+    tf = pd.read_csv("data/Ath_TF_list.txt", sep = "\t")
     tf = tf['Gene_ID']
     if algorithm == 'grnboost2':
           network = grnboost2(expression_data=data,

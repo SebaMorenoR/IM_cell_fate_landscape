@@ -26,7 +26,7 @@ os.chdir('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/m
 
 def names_changes_list(name_list): 
     new_list = []
-    names = pd.read_csv("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/gene_names_for_scrna.csv", sep = ",", index_col = 0)
+    names = pd.read_csv("data/gene_names_for_scrna.csv", sep = ",", index_col = 0)
     for n in name_list: 
         temp1 = names[names["gene_ids"]==n]
         if len(temp1) > 0:
@@ -47,7 +47,7 @@ sn = pd.read_excel("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repo
 markers = pd.read_excel("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/marker_genes_reg_final.xlsx", index_col= 0)
 
 neumann2022_names = pd.read_excel('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/neumann(2022)cluster_names.xlsx')
-neumann2022_markers = pd.read_excel('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/neumann(2022)cluster_markers.xlsx') 
+neumann2022_markers = pd.read_excel('data/neumann(2022)cluster_markers.xlsx') 
 
 name_map = dict(zip(sorted(neumann2022_markers['cluster'].unique()), neumann2022_names.annotation.tolist()))
 neumann2022_markers['cluster'] = neumann2022_markers['cluster'].replace(name_map)
@@ -82,7 +82,7 @@ plt.show()
 
 # %% Yadav  2014  - dataset 
 
-yadav2014 = pd.read_excel('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/yadav(2014)_DEG.xlsx')
+yadav2014 = pd.read_excel('data/yadav(2014)_DEG.xlsx')
 cols = [
     'CLV3_LAS_KAN1',
     'HMG_HDG4_WUS',
@@ -143,7 +143,7 @@ plt.show()
 
 # %%  Tiang (2019) comparison Vegetative apex 
 
-tiang2019 = pd.read_excel('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/Tian(2019)TableII.xlsx')
+tiang2019 = pd.read_excel('data/Tian(2019)TableII.xlsx')
 markers = pd.read_excel("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/marker_genes_reg_final.xlsx", index_col= 0)
 # markers = markers[markers['group'].isin(['undifferentiated cells', 'procambium', 'IM epidermis', 'stem epidermis'])]
 
@@ -182,7 +182,7 @@ plt.show()
 # 
 
 # %%  ### Zhang (2021) comparison Vegetative apex (STM+ cells)
-zhang2021 = pd.read_excel('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/zhang(2021)STM+.xlsx')
+zhang2021 = pd.read_excel('data/zhang(2021)STM+.xlsx')
 markers = pd.read_excel("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/marker_genes_reg_final.xlsx", index_col= 0)
 
 rename_dict = {  # cluster should be in the orther from 0 to final cluster
@@ -406,7 +406,7 @@ def consensus_with_datasets(row):
 comparison[['agreement_score', 'agreeing_datasets']] = comparison[['yadav_new', 'neumann_new', 'zhang_new', 'moreno_new']].apply(consensus_with_datasets, axis=1)
 
 ### Yadav (2014) comparison
-yadav2014 = pd.read_excel('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/yadav(2014)_DEG.xlsx')
+yadav2014 = pd.read_excel('data/yadav(2014)_DEG.xlsx')
 yadav2014_fil =  yadav2014[['AGI', 'CLV3_LAS_KAN1',
                         'HMG_HDG4_WUS', 'CLV3_FIL_KAN1_LAS', 'HMG_HDG4_AtML1',
                         'AtHB8_S17Soot_HDG4']]
@@ -414,10 +414,10 @@ yadav2014_fil2 = yadav2014_fil.dropna(subset=yadav2014_fil.columns[1:], how='all
 
 
 neumann2022_names = pd.read_excel('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/neumann(2022)cluster_names.xlsx')
-neumann2022_markers = pd.read_excel('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/neumann(2022)cluster_markers.xlsx') 
+neumann2022_markers = pd.read_excel('data/neumann(2022)cluster_markers.xlsx') 
 
 
-zhang2021 = pd.read_excel('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/zhang(2021)STM+.xlsx')
+zhang2021 = pd.read_excel('data/zhang(2021)STM+.xlsx')
     
 
 marker_counts = {

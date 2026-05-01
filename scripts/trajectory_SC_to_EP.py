@@ -25,7 +25,7 @@ sc.settings.logfile = sys.stdout
 
 def names_changes_list(name_list): 
     new_list = []
-    names = pd.read_csv("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/gene_names_for_scrna.csv", sep = ",", index_col = 0)
+    names = pd.read_csv("data/gene_names_for_scrna.csv", sep = ",", index_col = 0)
     for n in name_list: 
         temp1 = names[names["gene_ids"]==n]
         if len(temp1) > 0:

@@ -1,4 +1,4 @@
-name: scFates2
+name: trajectory_analysis
 channels:
   - conda-forge
   - defaults
@@ -218,4 +218,3 @@ dependencies:
       - wurlitzer==3.1.1
       - xarray==2025.7.1
       - zarr==3.1.0
-prefix: /Users/Sebastian/miniconda3/envs/scFates2

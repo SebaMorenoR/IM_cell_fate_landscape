@@ -4,14 +4,14 @@ Analysis code and supporting data for the accepted version of:
 
 **Single-nucleus transcriptomics resolves multiple fate dynamics between inflorescence meristem and primary stem**
 
-Moreno-Ramirez et al., 2026.
+Moreno-Ramirez et al., 2026. Science Advances 
 
 An earlier preprint version is available at bioRxiv:<br>
 <https://doi.org/10.1101/2024.08.06.606781>
 
 ## Overview
 
-This repository contains Python scripts used to analyse Arabidopsis shoot apical meristem single-nucleus RNA-seq data. The workflow is built mainly around Scanpy, with Harmony used for sample integration and scFates/Palantir used for trajectory analyses.
+This repository contains Python scripts used to analyse Arabidopsis inflorescence meristem single-nucleus RNA-seq data. The workflow is built mainly around Scanpy, with Harmony used for sample integration and scFates/Palantir used for trajectory analyses.
 
 The analyses cover:
 
@@ -50,38 +50,26 @@ The analyses cover:
 |   |-- go_analysis.py
 |   |-- comparison_studies.py
 |   `-- gh3hex_analysis.py
-`-- snuclei_run_def.py
+
 ```
 
 ## Environments
 
 Two Conda environments are provided because the clustering and trajectory workflows use different dependency sets.
-
 For preprocessing, clustering, marker genes, GO analysis and comparison plots:
-
 ```bash
 conda env create -f env/unbiased_clustering.yml
 conda activate unbiased_clustering
 ```
-
 For scFates/Palantir trajectory analyses:
-
 ```bash
 conda env create -f env/trajectory_analysis.yml
 conda activate trajectory_analysis
 ```
 
-The environment files were exported from the analysis machines and include pinned versions. They may need light adjustment on other operating systems or CPU architectures.
+## Data input
 
-## Data Layout
-
-The main inputs are the three CellBender-corrected 10x HDF5 matrices in `input_data/`. These correspond to the resequenced SAM biological samples used for the main single-nucleus analysis.
-
-Additional reference and metadata files in `input_data/` support gene-name conversion, bulk RNA-seq comparison, TF-target analysis, hormone-related marker plotting, published dataset comparisons and validation plots.
-
-Generated analysis objects, marker tables, GO tables and comparison tables are written to `output_data/`. Generated plots are written to `figures/` or to Scanpy/scFates default figure locations depending on the script.
-
-Large generated `.h5ad` objects can exceed GitHub's regular file-size limit, so they should be treated as local/generated outputs unless Git LFS or another data-hosting method is used.
+The main inputs are the three CellBender-corrected 10x HDF5 matrices in `input_data/`. These correspond to the resequenced SAM biological samples used for the main single-nucleus analysis. Raw files are deposited in in the NCBI Sequence Read Archive under BioProject accession PRJNA1438735, with SRA experiment accessions SRX32555293, SRX32555294, and SRX32555295. 
 
 ## Main Workflow
 
@@ -175,3 +163,4 @@ For a full analysis rerun, the intended order is approximately:
 
 Sebastian Moreno-Ramirez<br>
 sebastian.moreno@slcu.cam.ac.uk
+https://github.com/SebaMorenoR/

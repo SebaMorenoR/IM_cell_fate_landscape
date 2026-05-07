@@ -6,9 +6,6 @@ Created on Fri Feb 14 17:55:26 2025
 @author: Sebastian
 """
 
-
-
-
 import glob
 import pandas as pd 
 import os 
@@ -21,8 +18,13 @@ import pingouin as pg
 
 import locale 
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+INPUT_DATA = REPO_ROOT / "input_data"
+OUTPUT_FIGURES = REPO_ROOT / "figures"
+OUTPUT_DATA = REPO_ROOT / "output_data"
+
 #### GH3 related mutants 
-sam_size = pd.read_excel('/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/validation_experiments/gh3hex/gh3hex_sam_size.xlsx')
+sam_size = pd.read_excel(INPUT_DATA / 'gh3hex_sam_size.xlsx')
 sam_size["length"] = np.sqrt(sam_size['area']/3.14)*2
 
 
@@ -52,7 +54,7 @@ plt.xticks(rotation=45, fontsize = 10)
 ax.set_ylabel("SAM size (µm)" , fontsize =  12)
 ax.set_xlabel("" , fontsize =  12)
 plt.xticks([0, 1],  ['Col-0',  'gh3hex'], fontsize = 12,rotation = 20)
-plt.savefig('/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/validation_experiments/gh3hex/gh3hex_sam_size.pdf',  bbox_inches='tight')
+plt.savefig(OUTPUT_FIGURES / 'gh3hex_sam_size.pdf',  bbox_inches='tight')
 plt.show()
 
 
@@ -62,7 +64,7 @@ print(result)
 
 
 ### DIVERGE ANGLE FOR gh3hex mutant lines 
-angle = pd.read_excel('/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/validation_experiments/gh3hex/diverge_angle.xlsx')
+angle = pd.read_excel(INPUT_DATA / 'diverge_angle.xlsx')
 angle['plant'] = angle['plant'] + '_' +  angle['genotype']
 
 
@@ -80,15 +82,13 @@ def calculate_divergence_angle(df):
     df['angle_final'] = divergence_angles
     return df
 
-
-
 angle_final = pd.DataFrame()
 for plant in angle['plant'].unique(): 
     temp1 = angle[angle['plant'] == plant]
     df_with_divergence = calculate_divergence_angle(temp1)
     angle_final = pd.concat([angle_final,df_with_divergence])
     
-angle_final.to_excel('/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/validation_experiments/gh3hex/diverge_angle_final.xlsx')
+angle_final.to_excel(OUTPUT_DATA / 'diverge_angle_final.xlsx')
 angle_final = angle_final.dropna(subset=['angle_final'])
 
     
@@ -98,63 +98,8 @@ sns.histplot(data=angle_final, x='angle_final', kde=True, hue  = 'genotype',
 plt.xlabel('Divergence angles', fontsize = 12)
 plt.ylabel('Frequency of siliques', fontsize = 12)
 plt.grid(False)
-plt.savefig('/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/validation_experiments/gh3hex/gh3hex_phylotaxis.pdf',  bbox_inches='tight')
+plt.savefig(OUTPUT_FIGURES / 'gh3hex_phylotaxis.pdf',  bbox_inches='tight')
 plt.show()
-
-
-
-# ############################################# 
-# angle = pd.read_excel('/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/validation_experiments/gh3hex/diverge_angle.xlsx')
-# angle['replicate'] = angle.plant.str.split('p', expand = True)[0]
-# angle = angle[angle['replicate'] != 'R1']
-
-# def calculate_divergence_angle(df):
-#     angles = df['angle'].values
-#     divergence_angles = []
-    
-#     for i in range(len(angles) - 1):
-#         diff = angles[i+1] - angles[i]
-#         if diff < 0:
-#             diff += 360
-#         divergence_angles.append(diff)
-    
-#     divergence_angles.append(None)  # The last row has no next row to compare with
-#     df['angle_final'] = divergence_angles
-#     return df
-
-
-# angle_final = pd.DataFrame()
-
-# for plant in angle['plant'].unique(): 
-#     temp1 = angle[angle['plant'] == plant]
-#     df_with_divergence = calculate_divergence_angle(temp1)
-#     angle_final = pd.concat([angle_final,df_with_divergence ])
-    
-       
-# plt.figure(figsize=(4,2.5))
-# sns.lineplot(data=angle_final, x='silique',
-#              y = 'angle_final', 
-#             hue  = 'genotype',
-#              palette = ('purple', 'black'))
-# plt.xlabel('Silique (from base to top)', fontsize = 10)
-# plt.ylabel('Diverge angle', fontsize = 10)
-# plt.grid(False)
-# # plt.savefig('/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/validation_experiments/gh3hex/gh3hex_phylotaxis.pdf',  bbox_inches='tight')
-# plt.show()
-
-from scipy import stats
-
-
-
-
-pg.anderson(x =angle_final[angle_final['genotype'] =='col0']['angle_final'].tolist(),
-            y = angle_final[angle_final['genotype'] =='gh3hex']['angle_final'].tolist())
-
-pg.normality( data =angle_final , dv = 'angle_final', group = 'genotype')
-
-stats.ks_2samp( angle_final[angle_final['genotype'] =='col0']['angle_final'].tolist(), 
-               angle_final[angle_final['genotype'] =='gh3hex']['angle_final'].tolist(),
-               )
 
 
 

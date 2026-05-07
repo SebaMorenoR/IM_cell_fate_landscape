@@ -3,8 +3,16 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Jan 16 13:26:39 2023
+Unbiased clustering workflow for the CellBender-corrected single-nucleus
+RNA-seq samples. 
 
-@author: Sebastian
+Path variables below are intended to keep repository inputs and outputs
+explicit:
+- INPUT_DATA: raw/input files needed by this script.
+- OUTPUT_DATA: generated AnnData and table outputs.
+- OUTPUT_FIGURES: generated plot outputs.
+@author: Sebastián Moreno-Ramírez
+
 """
 
 
@@ -27,14 +35,16 @@ from statsmodels import robust
 import scrublet as scr
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
+from pathlib import Path
 
-
-os.chdir('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/')
-path = "/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/nuclei/sequencing/"
+REPO_ROOT = Path(__file__).resolve().parents[1]
+INPUT_DATA = REPO_ROOT / "input_data"
+OUTPUT_FIGURES = REPO_ROOT / "figures"
+OUTPUT_DATA = REPO_ROOT / "output_data"
 
 def names_changes_list(name_list): 
     new_list = []
-    names = pd.read_csv("data/gene_names_for_scrna.csv", sep = ",", index_col = 0)
+    names = pd.read_csv(INPUT_DATA / "gene_names_for_scrna.csv", sep = ",", index_col = 0)
     for n in name_list: 
         temp1 = names[names["gene_ids"]==n]
         if len(temp1) > 0:
@@ -48,21 +58,22 @@ def names_changes_list(name_list):
 
 # %% Importing datasets 
 #  Using CELLBENDER to remove environmental reads.
-data1 = sc.read_10x_h5('data/output_cellbender_filtered_resequenced_SITTC6.h5')  # submitted ##
+data1 = sc.read_10x_h5(INPUT_DATA / 'output_cellbender_filtered_resequenced_SITTC6.h5')  # submitted ##
 data1.obs['Sample'] = 'sittc6'
 
-data3 = sc.read_10x_h5('data/output_cellbender_filtered_resequenced_SITTE2.h5')
-data3.obs['Sample'] = 'sitte2'
+data2 = sc.read_10x_h5(INPUT_DATA / 'output_cellbender_filtered_resequenced_SITTE2.h5')
+data2.obs['Sample'] = 'sitte2'
 
-data4 = sc.read_10x_h5('data/output_cellbender_filtered_resequenced_SITTA1.h5')
-data4.obs['Sample'] = 'sitta1'
+data3 = sc.read_10x_h5(INPUT_DATA / 'output_cellbender_filtered_resequenced_SITTA1.h5')
+data3.obs['Sample'] = 'sitta1'
 
 data1.var_names_make_unique()
+data2.var_names_make_unique()
 data3.var_names_make_unique()
-data4.var_names_make_unique()
+
 
 # %% Combine samples into one anndata
-adata = data1.concatenate(data3.concatenate(data4))
+adata = data1.concatenate(data2.concatenate(data3))
 
 # Add GENE NAMES Only if I need to remove Ribosome genes 
 # new_list = names_changes_list(adata.var.index)
@@ -125,7 +136,7 @@ adata2.var_names_make_unique()
 
 adata2.layers['counts'] = adata2.X.copy()
 adata2.raw = adata2
-adata2.write_h5ad(path + '/adata_filtered.h5ad')
+adata2.write_h5ad(OUTPUT_DATA / 'adata_filtered.h5ad')
 
 sc.pp.normalize_total(adata2,
                       target_sum=1e4,
@@ -134,17 +145,16 @@ sc.pp.normalize_total(adata2,
 
 sc.pp.log1p(adata2)
 adata2.raw = adata2
-adata2.write_h5ad(path + '/adata_norm.h5ad')
+adata2.write_h5ad(OUTPUT_DATA / 'adata_norm.h5ad')
 
 
 # %%  REMOVING OUTLIERS using bulk-RNA-seq 
-norm_counts = pd.read_csv('/Users/Sebastian/Documentos/SLCU_lab/results/hormo_RNA_seq/norm_counts.csv', index_col=0)
-norm_counts = norm_counts[['mock4h', 'mock4h.1', 'mock4h.2']]
+norm_counts = pd.read_csv(INPUT_DATA / 'Bulk_RNA-seq_norm_counts.csv', index_col=0)
 norm_counts = np.log2(norm_counts + 1)
 norm_counts['mean'] = norm_counts.mean(axis=1)
 
 # normalized counts single-nuclei
-sc_adata = sc.read_h5ad(path + '/adata_norm.h5ad')
+sc_adata = sc.read_h5ad(OUTPUT_DATA / 'adata_norm.h5ad')
 sc_adata_df = sc_adata.to_df()
 
 shared_genes = list(set(norm_counts.index) & set(sc_adata_df.columns))
@@ -175,7 +185,6 @@ plt.ylabel('Inflorescence meristem bulk RNA-seq (log2)', size = 14)
 plt.xlabel('Inflorescence meristem pseudo-bulk snRNA-seq (log2)', size = 15)
 plt.show()
 
-
 res = stats.spearmanr(rna_seq['sc'], rna_seq['rna_seq'])
 print(res)
 
@@ -195,44 +204,11 @@ rna_seq['Outlier'] = np.abs(rna_seq['Residuals']) > threshold
 outliers = rna_seq[rna_seq['Outlier']]
 outliers['name'] = names_changes_list(outliers.index)
 
-# %% GO for outliers removed in this pipeline
-from gprofiler import GProfiler
-
-
-outliers = outliers[outliers['Residuals'] < 0]
-# Instantiate the object
-gp = GProfiler(return_dataframe=True)
-
-# Extract gene IDs (TAIR IDs)
-gene_list = outliers.index.tolist()
-
-# Run GO enrichment for Arabidopsis
-results = gp.profile(
-    organism='athaliana',
-    query=gene_list,
-    significance_threshold_method='fdr', 
-    sources=['GO:BP'], 
-    user_threshold=0.05, 
-    no_evidences=False
-)
-
-final_results = results
-final_results['-log10_pval'] = -np.log10(final_results['p_value'])
-## Incresing threhold? 
-final_results = final_results[(final_results['p_value'] < 0.01) & (final_results['intersection_size'] > 5)
-                              & (final_results['term_size'] <1000)]
-
-## Removing not interesting columns 
-final_results.drop(columns=['source', 'significant', 'evidences', 'parents','description'], inplace=True)
-
-
-
-
 # %% # removing outliers outside linear regression comparing RNA-seq with snRNA-seq
 adata2 = adata2[:, ~adata2.var_names.isin(outliers.index)]
 adata2.var_names_make_unique()
 
-adata2.write_h5ad(path + '/adata_filtered_norm.h5ad')
+adata2.write_h5ad(OUTPUT_DATA / 'adata_filtered_norm.h5ad')
 
 # %%  HVG
 import scanpy as sc
@@ -338,15 +314,13 @@ markers_def = markers[(markers.pvals_adj < 0.01) &
 
 
 markers_def['names_ref'] = names_changes_list(markers_def['names'])
-markers_def.to_excel(
-    "/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/marker_genes_reg.xlsx")
-
+markers_def.to_excel(OUTPUT_DATA / "marker_genes_reg_final.xlsx")
 
 # %% # save with without cluster names
-pcHVG_data.write_h5ad(path + '/pcHVG_data_proccessed.h5ad')
+pcHVG_data.write_h5ad(OUTPUT_DATA / 'pcHVG_data_proccessed.h5ad')
 
 #%%  RESUME FROM HERE TO SAVE ANNDATA WITH CLUSTER NAMES 
-pcHVG_data = sc.read_h5ad(path + '/pcHVG_data_proccessed.h5ad')
+pcHVG_data = sc.read_h5ad(OUTPUT_DATA / 'pcHVG_data_proccessed.h5ad')
 # Re-naming clusters
 rename_dict = {  # cluster should be in the orther from 0 to final cluster
     '0': 'photosynthetic cells',
@@ -417,18 +391,18 @@ sc.pl.dotplot(adata=pcHVG_data, var_names=markers, groupby='leiden',
 
 
 # save with new cluster names
-pcHVG_data.write_h5ad('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/pcHVG_data_proccessed_names.h5ad')
+pcHVG_data.write_h5ad(OUTPUT_DATA / 'pcHVG_data_proccessed_names.h5ad')
 
 
 #%% GENERATE DIFFERENTIALLY EXPRESSED (MARKER GENES) TABLE
-pcHVG_data = sc.read_h5ad('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/pcHVG_data_proccessed_names.h5ad')
+pcHVG_data = sc.read_h5ad(OUTPUT_DATA / 'pcHVG_data_proccessed_names.h5ad')
 pcHVG_data.uns['log1p']["base"] = None
 
 markers = sc.get.rank_genes_groups_df(pcHVG_data, group=None)
 markers['group'] = markers['group'].map(rename_dict)
 markers_def = markers[(markers.pvals_adj < 0.01) & (markers.logfoldchanges > 1) & (markers.pct_nz_group > 0.05)]
 markers_def['names_ref'] = names_changes_list(markers_def['names'])
-markers_def.to_excel("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/marker_genes_reg_final.xlsx")
+markers_def.to_excel(OUTPUT_DATA / "marker_genes_reg_final.xlsx")
 
 # %% Final UMAP 
 # STEP 1: Get the original tab20 colors
@@ -469,11 +443,10 @@ ax.tick_params(axis='x', rotation=90)
 ax.set(xlabel='Cell type', ylabel='Number of cells')
 plt.setp(ax.lines, color='k')
 sns.despine(offset=3, trim=False)
-plt.savefig('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/figures/percemntage_clusters.pdf',  bbox_inches='tight')
 plt.show()
 
 # %%  RE ASSIGN CELL CLUSTERS TO NORM DATA
-adata = sc.read_h5ad('/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/nuclei/sequencing/adata_filtered_norm.h5ad')
+adata = sc.read_h5ad(OUTPUT_DATA / 'adata_filtered_norm.h5ad')
 adata.obs['leiden'] = pcHVG_data.obs['leiden']
 # adata.var['highly_variable'] = pcHVG_data.var['highly_variable']
 adata.uns['umap'] = pcHVG_data.uns['umap']
@@ -485,7 +458,7 @@ adata.uns['pca'] = pcHVG_data.uns['pca']
 adata.obsp['distances'] = pcHVG_data.obsp['distances']
 adata.var['highly_variable'] =  False
 adata.uns =  pcHVG_data.uns
-adata.write_h5ad('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/adata_filtered_norm_clusters.h5ad')
+adata.write_h5ad(OUTPUT_DATA / 'adata_filtered_norm_clusters.h5ad')
 
 # %% OBTAIN LIST OF EXCLUSIVE DEG GENES PER CLUSTER 
 import pandas as pd
@@ -495,8 +468,7 @@ gene_counts = markers_def['names'].value_counts()
 exclusive_genes = gene_counts[gene_counts == 1].index
 # Step 3: Filter the original dataframe to keep only those exclusive genes
 exclusive_markers = markers_def[markers_def['names'].isin(exclusive_genes)]
-exclusive_markers.to_excel("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/marker_genes_reg_final_exclusive.xlsx")
-
+exclusive_markers.to_excel(OUTPUT_DATA / "marker_genes_reg_final_exclusive.xlsx")
 
 
 

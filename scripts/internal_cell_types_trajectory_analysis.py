@@ -24,7 +24,7 @@ sc.settings.logfile = sys.stdout
 
 def names_changes_list(name_list): 
     new_list = []
-    names = pd.read_csv("data/gene_names_for_scrna.csv", sep = ",", index_col = 0)
+    names = pd.read_csv(INPUT_DATA / "gene_names_for_scrna.csv", sep = ",", index_col = 0)
     for n in name_list: 
         temp1 = names[names["gene_ids"]==n]
         if len(temp1) > 0:
@@ -92,29 +92,28 @@ def scfates_trajectories_dendogram(adata, root_segment):
 
     return adata
 
+# %% Folder paths
+REPO_ROOT = Path(__file__).resolve().parents[1]
+INPUT_DATA = REPO_ROOT / "input_data"
+OUTPUT_FIGURES = REPO_ROOT / "figures"
+OUTPUT_DATA = REPO_ROOT / "output_data"
 
 # %%  scfates pipeline to obtain DEG for internal layers  
-adata = sc.read_h5ad('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/adata_filtered_norm_clusters.h5ad')  ### WITH CELL CYCLE CLUSTERS 
-# adata = sc.read_h5ad('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/adata_filtered_norm_clusters_without_cell_cycle.h5ad')  ### WITH CELL CYCLE CLUSTERS =
+adata = sc.read_h5ad(OUTPUT_DATA / 'adata_filtered_norm_clusters.h5ad')  ### WITH CELL CYCLE CLUSTERS 
 adata.obs['new_cell_identity'] = adata.obs['leiden']  ## Create this new obs column for processing 
 
-for eigen in [3,5,7,9]:
-        for nodes in [200]:
-            for sigma in [0.05]:
-                adata1 = scfates_trajectories_alignment(adata, clusters = [
-                                                                      'undifferentiated cells',
-                                                                      'xylem parenchyma',
-                                                                      'procambium',
-                                                                      'EP',
-                                                                      # 'rib zone',
-                                                                      'cortex',
-                                                                      # 'BD'
-                                                                     ],
-                                                        eigen = eigen,
-                                                        root_gene = 'AT2G17950', 
-                                                        nodes = nodes, 
-                                                        sigma = sigma,
-                                                        )
+adata1 = scfates_trajectories_alignment(
+    adata, clusters = ['undifferentiated cells',
+                       'xylem parenchyma',
+                       'procambium',
+                       'EP',
+                        'cortex',
+                        ],
+                        eigen = 9,
+                        root_gene = 'AT2G17950', 
+                        nodes = 200, 
+                        sigma = 0.05,
+                        )
 
 sc.pl.draw_graph(adata1,color=["new_cell_identity"], palette=sns.color_palette('tab20'), add_outline=True,  
                  legend_fontsize=10, legend_fontoutline=2, size = 50, 
@@ -123,8 +122,6 @@ sc.pl.draw_graph(adata1,color=["new_cell_identity"], palette=sns.color_palette('
 sc.pl.draw_graph(adata1,color=["leiden"], palette=sns.color_palette('Accent'), add_outline=True,  
                  legend_fontsize=10, legend_fontoutline=2, size = 100, 
                      save="_seg_leiden.pdf")  
-
-
 
 # %% Running milestone and pseudotime defininig root tip using CLV3 and WUS expression levels
 adata2 = scfates_trajectories_dendogram(adata1, 
@@ -157,10 +154,10 @@ sc.pl.draw_graph(adata2, color = ['AT5G19260'], layer = 'magic', add_outline=Tru
 sc.pl.draw_graph(adata2, color = ['AT5G03150'], layer = 'magic', add_outline=True,  legend_fontsize=10, legend_fontoutline=2, size= 200, 
                 cmap = 'RdGy_r', title = 'JKD')
 
-adata2.write_h5ad('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/adata_scfates_internal_layers.h5ad')    ## save with new cluster names 
+adata2.write_h5ad(OUTPUT_DATA / 'adata_scfates_internal_layers.h5ad')    ## save with new cluster names 
 
 # %%  Plotting segments figures 
-adata2 = sc.read_h5ad('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/adata_scfates_internal_layers.h5ad')
+adata2 = sc.read_h5ad(OUTPUT_DATA / 'adata_scfates_internal_layers.h5ad')
 
 sc.pl.draw_graph(adata2,color=["milestones"], palette=sns.color_palette('tab20'), add_outline=True,  
                  legend_fontsize=10, legend_fontoutline=2, size = 50)
@@ -211,7 +208,7 @@ sc.pl.draw_graph(adata2,color=["new_cell_identity"], palette=dark_tab20_hex, add
 # adata2.write_h5ad(path + '/adata_scfates_' + str(name_file) + '.h5ad')    ## save with new cluster names 
 
 # %% Plotting DEG per cell fate 
-adata2 = sc.read_h5ad('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/adata_scfates_internal_layers.h5ad')
+adata2 = sc.read_h5ad(OUTPUT_DATA / 'adata_scfates_internal_layers.h5ad')
 
 from scipy.stats import rankdata
 
@@ -239,12 +236,12 @@ for milestone in [ 'xylem parenchyma', 'xylem', 'cambium', 'phloem', 'cortex', '
     adata_Ic.write_h5ad('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/adata_scfates_internal_layers_'  + str(milestone) + '_association_fitted.h5ad') 
 
 # %% Importing anndata with DEG per trajectory only
-cortex = sc.read_h5ad('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/adata_scfates_internal_layers_'  + 'cortex' + '_association_fitted.h5ad')
-phloem = sc.read_h5ad('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/adata_scfates_internal_layers_'  + 'phloem' + '_association_fitted.h5ad')
-xylem = sc.read_h5ad('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/adata_scfates_internal_layers_'  + 'xylem' + '_association_fitted.h5ad')
-cambium = sc.read_h5ad('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/adata_scfates_internal_layers_'  + 'cambium' + '_association_fitted.h5ad')
-EP = sc.read_h5ad('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/adata_scfates_internal_layers_'  + 'EP' + '_association_fitted.h5ad')
-xylem_par = sc.read_h5ad('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/adata_scfates_internal_layers_'  + 'xylem parenchyma' + '_association_fitted.h5ad')
+cortex = sc.read_h5ad(OUTPUT_DATA / 'adata_scfates_internal_layers_'  + 'cortex' + '_association_fitted.h5ad')
+phloem = sc.read_h5ad(OUTPUT_DATA / 'adata_scfates_internal_layers_'  + 'phloem' + '_association_fitted.h5ad')
+xylem = sc.read_h5ad(OUTPUT_DATA / 'adata_scfates_internal_layers_'  + 'xylem' + '_association_fitted.h5ad')
+cambium = sc.read_h5ad(OUTPUT_DATA / 'adata_scfates_internal_layers_'  + 'cambium' + '_association_fitted.h5ad')
+EP = sc.read_h5ad(OUTPUT_DATA / 'adata_scfates_internal_layers_'  + 'EP' + '_association_fitted.h5ad')
+xylem_par = sc.read_h5ad(OUTPUT_DATA / 'adata_scfates_internal_layers_'  + 'xylem parenchyma' + '_association_fitted.h5ad')
 
 
 # %% pearson correlation for each trajectory for posterior ploting by max intensity 
@@ -258,7 +255,7 @@ fitted = pd.DataFrame( cortex[:, cortex.var_names].layers["fitted"], index=corte
 feature_order = ( fitted.apply( lambda x: cortex.obs.t[fitted.columns][(x - x.min()) / (x.max() - x.min()) > 0.7].mean(), axis=1, ).sort_values().index)
 df_bla = cortex.var.loc[feature_order]
 df_bla['gene_name'] = names_changes_list(df_bla['gene_ids'])
-df_bla.to_excel("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/cortex_DEG_ordered_peak_expression.xlsx")
+df_bla.to_excel(OUTPUT_DATA / 'cortex_DEG_ordered_peak_expression.xlsx')
 
 # Xylem 
 xylem.var["corr"]=list(map(lambda g: pearsonr(xylem.obs.t,xylem[:,g].layers["fitted"].flatten())[0],xylem.var_names))
@@ -268,7 +265,7 @@ fitted = pd.DataFrame( xylem[:, xylem.var_names].layers["fitted"], index=xylem.o
 feature_order = ( fitted.apply( lambda x: xylem.obs.t[fitted.columns][(x - x.min()) / (x.max() - x.min()) > 0.7].mean(), axis=1, ).sort_values().index)
 df_bla = xylem.var.loc[feature_order]
 df_bla['gene_name'] = names_changes_list(df_bla['gene_ids'])
-df_bla.to_excel("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/xylem_DEG_ordered_peak_expression.xlsx")
+df_bla.to_excel(OUTPUT_DATA / 'xylem_DEG_ordered_peak_expression.xlsx')
 
 # Xylem parenchyma
 xylem_par.var["corr"]=list(map(lambda g: pearsonr(xylem_par.obs.t,xylem_par[:,g].layers["fitted"].flatten())[0],xylem_par.var_names))
@@ -278,7 +275,7 @@ fitted = pd.DataFrame( xylem_par[:, xylem_par.var_names].layers["fitted"], index
 feature_order = ( fitted.apply( lambda x: xylem_par.obs.t[fitted.columns][(x - x.min()) / (x.max() - x.min()) > 0.7].mean(), axis=1, ).sort_values().index)
 df_bla = xylem_par.var.loc[feature_order]
 df_bla['gene_name'] = names_changes_list(df_bla['gene_ids'])
-df_bla.to_excel("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/xylemparenchyma_DEG_ordered_peak_expression.xlsx")
+df_bla.to_excel(OUTPUT_DATA / 'xylemparenchyma_DEG_ordered_peak_expression.xlsx')
 
 # EP 
 EP.var["corr"]=list(map(lambda g: pearsonr(EP.obs.t,EP[:,g].layers["fitted"].flatten())[0],EP.var_names))
@@ -288,33 +285,32 @@ fitted = pd.DataFrame( EP[:, EP.var_names].layers["fitted"], index=EP.obs_names,
 feature_order = ( fitted.apply( lambda x: EP.obs.t[fitted.columns][(x - x.min()) / (x.max() - x.min()) > 0.7].mean(), axis=1, ).sort_values().index)
 df_bla = EP.var.loc[feature_order]
 df_bla['gene_name'] = names_changes_list(df_bla['gene_ids'])
-df_bla.to_excel("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/EP_DEG_ordered_peak_expression.xlsx")
+df_bla.to_excel(OUTPUT_DATA / 'EP_DEG_ordered_peak_expression.xlsx')
 
 # Phloem 
 phloem.var["corr"]=list(map(lambda g: pearsonr(phloem.obs.t,phloem[:,g].layers["fitted"].flatten())[0],phloem.var_names))
 phloem.var["up"]=phloem.var["corr"]>0
-# phloem.var.sort_values(by=['corr'], ascending=True).to_excel("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/phloem_DEG_ordered_peak_expression.xlsx")
+# phloem.var.sort_values(by=['corr'], ascending=True).to_excel(OUTPUT_DATA / 'phloem_DEG_ordered_peak_expression.xlsx')
 fitted = pd.DataFrame( phloem[:, phloem.var_names].layers["fitted"], index=phloem.obs_names, columns=phloem.var_names).T.copy(deep=True)
 feature_order = ( fitted.apply( lambda x: phloem.obs.t[fitted.columns][(x - x.min()) / (x.max() - x.min()) > 0.7].mean(), axis=1, ).sort_values().index)
 df_bla = phloem.var.loc[feature_order]
 df_bla['gene_name'] = names_changes_list(df_bla['gene_ids'])
-df_bla.to_excel("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/phloem_DEG_ordered_peak_expression.xlsx")
+df_bla.to_excel(OUTPUT_DATA / 'phloem_DEG_ordered_peak_expression.xlsx')
 
 # Cambium 
 cambium.var["corr"]=list(map(lambda g: pearsonr(cambium.obs.t,cambium[:,g].layers["fitted"].flatten())[0],cambium.var_names))
 cambium.var["up"]=cambium.var["corr"]>0
-# cambium.var.sort_values(by=['corr'], ascending=True).to_excel("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/cambium_DEG_ordered_peak_expression.xlsx")
+# cambium.var.sort_values(by=['corr'], ascending=True).to_excel(OUTPUT_DATA / 'cambium_DEG_ordered_peak_expression.xlsx')
 fitted = pd.DataFrame( cambium[:, cambium.var_names].layers["fitted"], index=cambium.obs_names, columns=cambium.var_names).T.copy(deep=True)
 feature_order = ( fitted.apply( lambda x: cambium.obs.t[fitted.columns][(x - x.min()) / (x.max() - x.min()) > 0.7].mean(), axis=1, ).sort_values().index)
 df_bla = cambium.var.loc[feature_order]
 df_bla['gene_name'] = names_changes_list(df_bla['gene_ids'])
-df_bla.to_excel("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/cambium_DEG_ordered_peak_expression.xlsx")
+df_bla.to_excel(OUTPUT_DATA / 'cambium_DEG_ordered_peak_expression.xlsx')
 
 
 # %% PHLOEM trajectry plotting 
 from pathlib import Path
 import os
-
 project_dir = Path("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024")
 os.chdir(project_dir)
 sc.set_figure_params(figsize=(2,10),dpi_save=600,frameon=False)

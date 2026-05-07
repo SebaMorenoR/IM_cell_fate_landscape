@@ -5,30 +5,27 @@ Created on Fri May 26 11:31:18 2023
 
 @author: Sebastian
 """
-
-
-
 import glob
 import pandas as pd 
 import os 
 import matplotlib.pyplot as plt  
 import seaborn as sns
-
 import numpy as np
-
 from scipy import stats
-
-    
 import matplotlib as mpl
 import anndata as ad
-# from imgmisc import listdir
-
-os.chdir("/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/nuclei/sequencing/figures/GO_clusters/")
 from glob import glob
 
+# %% Folder paths
+REPO_ROOT = Path(__file__).resolve().parents[1]
+INPUT_DATA = REPO_ROOT / "input_data"
+OUTPUT_FIGURES = REPO_ROOT / "figures"
+OUTPUT_DATA = REPO_ROOT / "output_data"
+
+# %% Functions
 def names_changes_list(name_list): 
     new_list = []
-    names = pd.read_csv("data/gene_names_for_scrna.csv", sep = ",", index_col = 0)
+    names = pd.read_csv(INPUT_DATA / "gene_names_for_scrna.csv", sep = ",", index_col = 0)
     for n in name_list: 
         temp1 = names[names["gene_ids"]==n]
         if len(temp1) > 0:
@@ -39,14 +36,13 @@ def names_changes_list(name_list):
             new_list.append(n)
     return new_list
 
-
 #%% Gene ontology for all clusters 
 import pandas as pd
 from gprofiler import GProfiler
 import numpy as np
 trajectory = 'EP'
 cc_var = pd.read_excel(
-    '/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/marker_genes_reg_final.xlsx',
+    OUTPUT_DATA / 'marker_genes_reg_final.xlsx',
     index_col=0)
 
 # Instantiate the object
@@ -86,9 +82,7 @@ final_results = final_results[(final_results['p_value'] < 0.01) & (final_results
 
 ## Removing not interesting columns 
 final_results.drop(columns=['source', 'significant', 'evidences', 'parents','description'], inplace=True)
-
-
-final_results.to_excel('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/GO_all_clusters.xlsx')
+final_results.to_excel(OUTPUT_DATA / 'GO_all_clusters.xlsx')
 
 # %%  Plotting all GO in one scatterplot
 import matplotlib.pyplot as plt
@@ -176,7 +170,7 @@ ax.set_title('GO enrichment across windows', fontsize=16)
 # Save and show
 plt.tight_layout()
 plt.savefig(
-    '/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/figures/GO_all_clusters.pdf',
+    OUTPUT_FIGURES / 'GO_all_clusters.pdf',
     bbox_inches='tight'
 )
 plt.show()
@@ -191,24 +185,16 @@ for row in list(range(len(final_results))):
     temp1 = temp1.to_frame().T
     final_results_names = pd.concat([final_results_names, temp1], axis=0)
 
-final_results_names.to_excel('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/GO_all_clusters_genes_names.xlsx')
+final_results_names.to_excel(OUTPUT_DATA / 'GO_all_clusters_genes_names.xlsx')
 
 # %% # PLOT PER CLUSTER 
 
 from matplotlib.lines import Line2D
 
-
 go_df = pd.DataFrame()
 for cluster in final_results['cluster'].unique().tolist(): 
     temp1 = final_results[final_results['cluster'] == cluster]
-    # temp1['cluster'] = f.split('_')[0]
-    # temp1['-log(FDR)'] = np.log(temp1['Enrichment FDR'])*-1
-    # temp1 = temp1[temp1['Enrichment FDR'] <= 0.05]
-    # temp1 = temp1.sort_values('Fold Enrichment', ascending = False)
-    # temp1 = temp1.sort_values('-log(FDR)', ascending = False)
-    # temp1['Pathway'] = temp1['Pathway']
     temp1 = temp1[0:10]
-    # temp1['label'] = temp1['Pathway'] + '   ' + temp1['cluster']
     s_incr = 50
     s_values = temp1['intersection_size'] * s_incr
     s_values = pd.to_numeric(s_values)
@@ -224,33 +210,6 @@ for cluster in final_results['cluster'].unique().tolist():
                     linewidth=1,
                     alpha=0.8,
                     zorder=3)
-
-
-     # ---------- FIXED SIZE LEGEND ----------
-    # sizes_for_legend = sorted(temp1['intersection_size'].unique())
-
-    # legend_elements = [
-    #     Line2D(
-    #         [0], [0],
-    #         marker='o',
-    #         linestyle='',
-    #         label=str(int(size)),
-    #         markerfacecolor='darkgrey',
-    #         markeredgecolor='k',
-    #         markersize=np.sqrt(size * s_incr)  # area → diameter
-    #     )
-    #     for size in sizes_for_legend
-    # ]
-
-    # legend1 = ax.legend(
-    #     handles=legend_elements,
-    #     title='nGenes',
-    #     loc='center left',
-    #     bbox_to_anchor=(1.1, 1),  # outside, right side
-    #     frameon=False
-    # )
-
-    # ax.add_artist(legend1)
     # Colorbar
     cbar = plt.colorbar(sc, ax=ax)
     cbar.set_label('Fold Enrichment', fontsize=15)
@@ -259,146 +218,3 @@ for cluster in final_results['cluster'].unique().tolist():
     plt.xlabel('-log10_pval', fontsize=15)
     # plt.savefig(str(cluster) + '__GO.pdf', bbox_inches='tight')
     plt.show()
-
-# %% 
-
-#     go_df = pd.concat([go_df,temp1[0:5]])  ### number of top GO to plot later 
-    
-# # go_df['Pathway'] = go_df['Pathway'].astype(str)
-# # go_df = go_df.dropna(subset=['Pathway'])
-
-  
-
-
-# ### Plotting all GO in one scatterplot 
-# # Create figure and axis
-# fig, ax = plt.subplots(figsize=(5, 20), dpi = 1000)   
-# # Add grid behind scatterplot
-# ax.grid(axis='x', zorder=0)
-# # Scatter plot
-# s_incr = 25     
-# sc = ax.scatter(data=go_df, x='cluster', y='Pathway', 
-#                 c='-log(FDR)', 
-#                 cmap='inferno', 
-#                 s=go_df['nGenes'] * s_incr, 
-#                 edgecolor='k', linewidth=0.5, alpha=0.95, zorder=3)
-
-# # Add size legend for number of genes
-# for size in range(int(go_df['nGenes'].min() * s_incr), int(go_df['nGenes'].max() * s_incr), int(s_incr)):
-#     ax.scatter([], [], c='darkgrey', alpha=1, s=size, label=str(int(size / s_incr)))
-
-# # Colorbar
-# cbar = plt.colorbar(sc, ax=ax)
-# cbar.set_label('-log(FDR)', fontsize=12)
-
-# # Formatting
-# ax.set_xticks(go_df['cluster'].unique())  # Ensure x-ticks are correct
-# ax.set_xticklabels(go_df['cluster'].unique(), rotation=90, fontsize=15)
-# ax.tick_params(axis='y', labelsize=15)
-
-# # Save and show
-# plt.savefig(INPUT_DIR + 'ALL-CLUSTERS__GO.pdf', bbox_inches='tight')
-# plt.show()
-    
-    
-    
-# # ##### GO for TARGETS OF DOF5.8 and MP 
-
-
-# # INPUT_DIR = "/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/nuclei/sequencing/figures/GO_clusters/"
-# # # from snuclei_run_def import scrublet_processing, qc_visualization, qc_processing , scar_ambient_denoising , scvi_doublet_removal, names_changes_list
-# # # from snuclei_run_def import separate_floral_meristem, change_names_adata ,  hvg_pca, names_change_dataframe, umap, regressing_out_cell_cycle, population_per_domain , removing_outlier_clusters
-# # # from snuclei_run_def import coexpression_cluster, coexpression_arboreto, coexpression_arboreto_by_cluster, umap_3d
-# # # plt.rcParams["font.family"] = "Arial"
-# # sc.set_figure_params(dpi=100)
-
-# # ## PLOT PER CLUSTER 
-# # files = os.listdir(INPUT_DIR)
-# # files = [ x for x in files if not "pdf"  in x ] 
-# # files = [ x for x in files if not "xlsx"  in x ] 
-# # files = [ x for x in files if  "target_genes_GO.csv"  in x ] 
-
-
-
-# # go_df = pd.DataFrame()
-
-# # for f in files: 
-# #     temp1 = pd.read_csv(f)
-# #     temp1['cluster'] = f.split('_')[0]
-# #     temp1['-log(FDR)'] = np.log(temp1['Enrichment FDR'])*-1
-# #     temp1 = temp1[temp1['Enrichment FDR'] <= 0.05]
-# #     temp1 = temp1.sort_values('Fold Enrichment', ascending = False)
-# #     temp1['Pathway'] = temp1['Pathway'].str.extract(r'(GO:\d+)\s+(.*)')[1]
-       
-# #     temp1['label'] = temp1['Pathway'] + '   ' + temp1['cluster']
-# #     go_df = pd.concat([go_df,temp1[0:25]])  ### number of top GO to plot later 
-       
-# #     temp1 = temp1.sort_values('-log(FDR)', ascending = True)
-# #     # if len(temp1) > 0: 
-# #     # tissue_color = cm.get_cmap('viridis')   
-# #     plt.figure(figsize=(3,3))   
-# #     plt. grid(False)
-# #     s_incr = 20     
-# #     sc = plt.scatter(data = temp1, x = '-log(FDR)', y ='Pathway' , c = 'Fold Enrichment',
-# #                 cmap = 'cividis', s = temp1['nGenes']*s_incr,
-# #                 edgecolor='k', linewidth=1, alpha=1)
-# #     # plt.legend(bbox_to_anchor=(1.1, 1), loc=2, borderaxespad=0.)
-# #     for size in list(range(temp1.nGenes.min()*s_incr, temp1.nGenes.max()*s_incr,temp1.nGenes.min()*s_incr*2 ))[0::]:
-# #         plt.scatter([], [], c='grey', alpha=1, s=size,
-# #                        label=str(size/s_incr))
-# #     plt.legend(scatterpoints=1, frameon=False,
-# #                   labelspacing=0.5, title='Number of genes per GO', loc='upper center', bbox_to_anchor=(1, 1.3), ncol=10)
-# #     # for c in temp1.cluster.unique(): 
-# #     #     temp3 = temp1[temp1["cluster"] == c]
-# #     #     # print(temp3, c)
-# #     #     line = max(temp3.index)
-# #     #     # plt.hlines(line+0.5,xmin=10, xmax=temp1['Fold Enrichment'].max()+10, color="black", linestyle="--" ) 
-# #     plt.colorbar(sc, label = 'Fold Enrichment' )
-# #     # print(temp1['Fold Enrichment'].max()+10, f)
-# #     # plt.xlim(0 , temp1['-log(FDR)'].max()+10)
-# #     plt.title(str(f))
-# #     plt.xlabel('-log(FDR)')
-# #     plt.savefig( INPUT_DIR + str(f) + '_GO.pdf', bbox_inches='tight')
-# #     plt.show()        
-# #     temp3 = pd.DataFrame()
-# #     for i in list(range(len(temp1))): 
-# #         temp2 = temp1.iloc[i,::]
-# #         genes = temp2['Genes'].split(' ')
-# #         names = names_changes_list(genes)
-# #         temp2['AGI_name'] = names
-# #         temp3 = pd.concat([temp3,temp2], axis=1)
-# #     temp3.to_excel(INPUT_DIR  +str(f)+ ".xlsx")
-# #     # go_df = pd.concat[(go_df, temp1)]
-    
-
-
-# # ### Plotting all GO in one scatterplot 
-# # plt.figure(figsize=(1,5))   
-# # plt. grid(False)
-# # s_incr = 10     
-# # ax = plt.scatter(data = go_df, x = 'cluster', y ='Pathway' , c = '-log(FDR)', 
-# #             cmap = 'RdBu_r', s = go_df['nGenes']*s_incr,
-# #             edgecolor='k', linewidth=0.5, alpha=1)
-# # for size in list(range(int(go_df['nGenes'].min() * s_incr), int(go_df['nGenes'].max() * s_incr), int(s_incr))):
-# #     plt.scatter([], [], c='darkgrey', alpha=1, s=size, label=str(int(size / s_incr)))
-
-# # plt.legend(scatterpoints=1, frameon=False,
-# #               labelspacing=0.5, title='Number of genes', loc='upper center', bbox_to_anchor=(1, 1.3), ncol=10)
-# # plt.colorbar(ax, label = '-log(FDR)' )
-# # plt.xticks(rotation=90, ha='right', fontsize = 7)
-# # plt.yticks( fontsize = 7)
-# # plt.margins(0.5,0.1)
-# # plt.savefig( INPUT_DIR +  'EP_MP_and_DOF5.8_targets_GO.pdf', bbox_inches='tight')
-# # plt.show()        
-   
-
-
-
-
-
-
-
-
-
-
-

@@ -3,9 +3,8 @@
 """
 Created on Fri Mar  7 17:39:26 2025
 
-@author: Sebastian
+@author: Sebastian Moreno-Ramirez
 """
-
 import pandas as pd 
 import matplotlib.cm
 import matplotlib.pyplot as plt  
@@ -14,26 +13,18 @@ import scanpy as sc
 import numpy as np
 import os 
 import matplotlib.colors as mcolors
-
-
+from pathlib import Path
 import matplotlib as mpl
-mpl.rcParams['font.family'] = ['Arial']
-mpl.rcParams['text.color'] = 'black' 
-mpl.rcParams['axes.labelcolor'] = 'black'
-mpl.rcParams['xtick.color'] = 'black'
-mpl.rcParams['ytick.color'] = 'black'
-mpl.rcParams['axes.labelcolor'] = 'black'    # axis labels
-mpl.rcParams['axes.edgecolor'] = 'black'     # edge (spine) color of the main Axes (not sns.clustermap)
+# %% Folder paths
+REPO_ROOT = Path(__file__).resolve().parents[1]
+INPUT_DATA = REPO_ROOT / "input_data"
+OUTPUT_FIGURES = REPO_ROOT / "figures"
+OUTPUT_DATA = REPO_ROOT / "output_data" 
 
-os.chdir('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/')
-
-
-
-path = "/Users/Sebastian/Documentos/SLCU_lab/results/scrna_seq/nuclei/sequencing/"
-
+# %% Functions
 def names_changes_list(name_list): 
     new_list = []
-    names = pd.read_csv("data/gene_names_for_scrna.csv", sep = ",", index_col = 0)
+    names = pd.read_csv(INPUT_DATA / "gene_names_for_scrna.csv", sep = ",", index_col = 0)
     for n in name_list: 
         temp1 = names[names["gene_ids"]==n]
         if len(temp1) > 0:
@@ -56,7 +47,6 @@ def add_suffix_to_duplicates(lst):
             result.append(item)
     return result
    
-
 def darken_cmap(cmap, factor=0.9):
     """Darkens a colormap by multiplying RGB values by a factor."""
     colors = cmap(np.linspace(0, 1, 256))  # Sample original colormap
@@ -66,9 +56,9 @@ def darken_cmap(cmap, factor=0.9):
 original_cmap = plt.get_cmap("BuPu")
 darkened_cmap = darken_cmap(original_cmap, factor=1)
 
-adata = sc.read_h5ad('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/adata_filtered_norm_clusters.h5ad') ## normalized counts single-nuclei
-genes = pd.read_excel("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/marker_genes_reg_final.xlsx", index_col= 0)
-
+# %% Load data
+adata = sc.read_h5ad(OUTPUT_DATA / 'adata_filtered_norm_clusters.h5ad') ## normalized counts single-nuclei
+genes = pd.read_excel(OUTPUT_DATA / 'marker_genes_reg_final.xlsx', index_col= 0)
 
 # %% Add GENE NAMES 
 adata.raw.var['gene_ids'] = names_changes_list(adata.raw.var.index)
@@ -163,17 +153,13 @@ sc.pl.umap(adata, color=['AT2G17950', 'AT2G27250', 'AT1G26680', 'AT3G59270'], ti
         save = "iSC_UMAP-related_cluster_matrixplot.pdf")
 
 # %%  Obtain AUXIN related genes as marker genes ####
-## USE GO-related genes 
-
-auxin = pd.read_excel("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/auxin_related_genes_curated.xlsx")
-genes = pd.read_excel("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/marker_genes_reg_final.xlsx", index_col= 0)
-
+auxin = pd.read_excel(INPUT_DATA / 'auxin_related_genes_curated.xlsx')
+genes = pd.read_excel(OUTPUT_DATA / 'marker_genes_reg_final.xlsx', index_col= 0)
 
 auxin = list(set(auxin['AGI']) & set(genes.names.tolist()))  ## Auxin-related genes as marker genes 
 # auxin = list(set(auxin) & set(genes['names'].tolist()))
 auxin = names_changes_list(auxin)
 sc.set_figure_params(figsize=(4,4),frameon=False, dpi=300)
-
 
 sc.pl.matrixplot(adata, var_names = auxin,  groupby='leiden', #dendrogram=True,
                 gene_symbols= 'gene_ids', swap_axes = True, figsize= (5,5),
@@ -182,7 +168,6 @@ sc.pl.matrixplot(adata, var_names = auxin,  groupby='leiden', #dendrogram=True,
                 colorbar_title ='Standarized  \nmean expression  \nper cluster',
                 cmap = darkened_cmap,
                 linewidth = 0.5, color = 'black',
-                save =  "Auxin_related_EP_cluster_markers.pdf"
                 )
 # %%  auxin reordered 
 auxin_reorderd = ['ARF6',
@@ -211,7 +196,6 @@ auxin_reorderd = ['ARF6',
                  'GH3.6', 
                  ]
 sc.set_figure_params(frameon=False, dpi=500)
-# auxin_filtered = [ 'IAA30', 'IAA20','IAA29' ,'AUX1', 'ARF5','YUC',  'LAX1', 'LRP1','GH3.3', 'ETT', 'PIN6','NDL3','PIN2','GH3.2', 'PID', 'IAA18','PIN1', 'IAA7', 'TMK1','ARF6','YUC6','GH3.6','IAA33','IAA9',  'IAA26',]
 sc.pl.matrixplot(adata, var_names = auxin_reorderd,  groupby='leiden', #dendrogram=True,
                 gene_symbols= 'gene_ids', swap_axes = True, figsize= (5,6),
                 standard_scale='var', 
@@ -219,11 +203,10 @@ sc.pl.matrixplot(adata, var_names = auxin_reorderd,  groupby='leiden', #dendrogr
                 colorbar_title ='Standarized  \nmean expression  \nper cluster',
                 cmap = 'BuPu',
                 linewidth = 0.5, color = 'black',
-                save =  "Auxin_related_auxin_filtered_markers.pdf"
                 )
 
 # %% CK 
-ck = pd.read_excel("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/CK-related_genes_curated.xlsx", header= 0)
+ck = pd.read_excel(INPUT_DATA / 'CK-related_genes_curated.xlsx', header= 0)
 ck = list(set(ck['LOCUS']) & set(adata.var.index.tolist()))
 ck = list(set(ck) & set(genes['names'].tolist()))
 ck = names_changes_list(ck)
@@ -242,7 +225,7 @@ sc.pl.matrixplot(adata, var_names = ck ,
                 )
 
 # %% 
-ga = pd.read_excel("/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/GA-related_genes_curated.xlsx", header= 0)
+ga = pd.read_excel(INPUT_DATA / 'GA-related_genes_curated.xlsx', header= 0)
 ga = list(set(ga['LOCUS']) & set(adata.var.index.tolist()))
 ga = list(set(ga) & set(genes['names'].tolist()))
 ga = names_changes_list(ga)
@@ -255,9 +238,7 @@ sc.pl.matrixplot(adata, var_names = GA,
                   gene_symbols= 'gene_ids', 
                 standard_scale='var', 
                 linewidth = 0.5, color = 'black', alpha = 1,
-                # gene_symbols = 'gene_ids',
                 colorbar_title ='Standardized  \ngene expression',
-                # save =  "GA_related_matrixplot.pdf"
                 )
 
 
@@ -294,15 +275,6 @@ sc.pl.matrixplot(adata, var_names = m_phase , groupby= 'leiden',
                 linewidth = 0.5, color = 'black',
                 save =  "m-phase-phase_related_cluster_matrixplot.pdf")
 
-# unknown2 = ['AT5G22794',  'AT5G58280', 'AT2G17490'] 
-# sc.pl.matrixplot(adata, var_names = unknown2 , groupby= 'leiden', 
-#                  swap_axes = True , cmap = darkened_cmap,
-#                 standard_scale='var', 
-#                 gene_symbols= 'gene_ids', 
-#                 figsize= (8,2),
-#                 colorbar_title ='Standarized  \nmean expression  \nper cluster',
-#                 linewidth = 0.5, color = 'black',
-#                 save =  "unknown2_related_cluster_matrixplot.pdf")
 
 # %% 
 pollen = ['AMS',  'TA1', 'ABCG26', 'CYP704B1', 'TKPR1', 'SWEET3', 'PKSB', 'MYB99'] 
@@ -340,7 +312,6 @@ sc.pl.matrixplot(adata, var_names = cortex ,linewidth = 0.5, color = 'black',
 
 
 # %% BD
-
 boundary = ['CUC3', 'CUC2', 'WOX12', 'NPF1.1', 'SOD7', 'NAC041', 'NPF1.2'] 
 # sc.pl.umap(pcHVG_data, color=boundary, #legend_loc='on data',
 #            add_outline=True, cmap = 'magma', size = 100, 
@@ -390,7 +361,7 @@ sc.pl.matrixplot(adata, var_names = hypoxia , groupby= 'leiden',
 
 # %%  PLOTTING UMAPS 
 
-adata = sc.read_h5ad('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/adata_filtered_norm_clusters.h5ad') ## normalized counts single-nuclei
+adata = sc.read_h5ad(OUTPUT_DATA / 'adata_filtered_norm_clusters.h5ad') ## normalized counts single-nuclei
 
 adata.var['gene_ids'] = names_changes_list(adata.var.index)
 
@@ -417,9 +388,6 @@ sc.pl.umap(adata, color=['AHP6', 'DRNL', 'TPPJ', 'IAA20'],
        add_outline=False , 
        frameon=True, legend_fontsize=7, legend_fontoutline=5,
        cmap="inferno")
-       
-
-
 
 sc.set_figure_params(figsize=(4,4),frameon=False, dpi=500)
 sc.pl.umap(adata, color=['AHP6', 'GRXC7', 'DRNL', 'TPPJ'] , 
@@ -429,31 +397,4 @@ sc.pl.umap(adata, color=['AHP6', 'GRXC7', 'DRNL', 'TPPJ'] ,
        frameon=True, legend_fontsize=7, legend_fontoutline=5,
        cmap="inferno",
        save = 'EP_UMAP.pdf')
-       
-
-
-# %% Test 
-
-sc.set_figure_params(frameon=False, dpi=300)
-test = [ 'ADF9', 'LAZY1' , 'LAZY3', 'LAZY6', 'TAC1','AT3G48550', 'CHAL'] 
-sc.pl.matrixplot(adata, var_names = test , groupby= 'leiden', 
-                 swap_axes = True , cmap = 'BuPu',
-                standard_scale='var', 
-                gene_symbols= 'gene_ids', 
-                figsize= (7,1.5),
-                colorbar_title ='Standardized  \ngene expression',
-                linewidth = 0.5, color = 'black')
-
-    
-
-# %% SHR-SCR network 
-cortex = ['JKD',   'SHR', 'SCR', 'MGP', 'BIB'] 
-sc.pl.matrixplot(adata, var_names = cortex ,linewidth = 0.5, color = 'black',
-                 groupby= 'leiden', swap_axes = True , cmap = darkened_cmap,
-                 figsize= (7,1.5),
-                standard_scale='var', 
-                gene_symbols = 'gene_ids',
-                colorbar_title ='Standardized  \ngene expression')
-    
-    
 

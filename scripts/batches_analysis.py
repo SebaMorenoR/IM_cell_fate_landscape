@@ -6,14 +6,6 @@ Created on Wed Mar  5 12:29:18 2025
 @author: Sebastian
 """
 
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jan 16 13:26:39 2023
-
-@author: Sebastian
-"""
-
 import pandas as pd 
 import matplotlib.cm
 import matplotlib.pyplot as plt  
@@ -28,7 +20,7 @@ mpl.rcParams['font.family'] = ['Arial']
 
 # %% UMAP per sample(batch) 
 
-adata =  sc.read_h5ad('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/adata_filtered_norm_clusters.h5ad') ## normalized counts single-nuclei
+adata =  sc.read_h5ad(OUTPUT_DATA / 'adata_filtered_norm_clusters.h5ad') ## normalized counts single-nuclei
 
 
 ### Metrics per batch 
@@ -66,8 +58,7 @@ len(adata.obs[adata.obs['Sample'] == 'sitte2'])
 
 # %%  Correlation between replicates 
 
-adata = sc.read_h5ad('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/data/adata_filtered_norm_clusters.h5ad') ## normalized counts single-nuclei
-
+adata = sc.read_h5ad(OUTPUT_DATA / 'adata_filtered_norm_clusters.h5ad') ## normalized counts single-nuclei
 
 adata1 = adata[adata.obs['Sample'] == 'sittc6']
 adata2 = adata[adata.obs['Sample'] == 'sitta1']
@@ -77,13 +68,9 @@ count1 = adata1.to_df().sum(axis = 0)
 count2 = adata2.to_df().sum(axis = 0)
 count3 = adata3.to_df().sum(axis = 0)
 
-
 count1= np.log2(count1 +1 )
 count2= np.log2(count2 +1 )
 count3= np.log2(count3 +1 )
-
-
-
 
 fig, ax = plt.subplots(figsize=(3, 3), dpi = 500)
 ax.grid(False)
@@ -133,15 +120,12 @@ plt.xlabel('Rep. 2')
 plt.ylabel('Rep. 3')
 plt.show()
 
-
 from scipy import stats
 print(stats.spearmanr(count1,count2))
 print(stats.spearmanr(count1,count3))
 print(stats.spearmanr(count2,count3))
 
-# %% 
-
-## TOTAL COUNT AND NUMBER OF GENES PER CLUSTER
+# %% TOTAL COUNT AND NUMBER OF GENES PER CLUSTER
 fig, ax = plt.subplots(figsize=(6, 4), dpi = 500)
 obs = pd.DataFrame(adata.obs)
 ax = sns.violinplot(data = obs, 
@@ -152,25 +136,13 @@ ax = sns.violinplot(data = obs,
 ax.grid(False)
 # Calculate means
 group_means = obs.groupby('leiden')['total_counts'].mean()
-# Add mean values to the plot
-# for i, (group, mean_value) in enumerate(group_means.items()):
-#     ax.text(
-#         i,  # x-coordinate at the center of the violin
-#         mean_value + 9000,  # y-coordinate slightly above the violin (adjust if necessary)
-#         f'{mean_value:.1f}',  # Format mean value
-#         ha='center',  # Horizontal alignment
-#         va='bottom',  # Vertical alignment
-#         fontsize=5,   # Font size
-#         color='black' # Text color
-#     )
 ax.tick_params(axis='x', rotation=90)
 plt.ylabel('Total counts', fontsize =15)
 plt.ylim(-200,15000) 
-plt.savefig('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/figures/total_counts.pdf', bbox_inches='tight')
+plt.savefig(OUTPUT_FIGURES / 'total_counts.pdf', bbox_inches='tight')
 plt.show()
 
-# %% 
-## VIOLIN PLOT PER BATCH 
+# %%  VIOLIN PLOT PER BATCH 
 
 sc.set_figure_params(frameon=False, dpi=500)
 plt.rcParams['axes.grid'] = False
@@ -199,36 +171,6 @@ ax.tick_params(axis='x', rotation=90)
 ax.set(xlabel='Cell type', ylabel='Number of cells')
 plt.setp(ax.lines, color='k')
 sns.despine(offset=3, trim=False)
-plt.savefig('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/figures/percemntage_clusters.pdf',  bbox_inches='tight')
+plt.savefig(OUTPUT_FIGURES / 'percentage_clusters.pdf',  bbox_inches='tight')
 plt.show()
-
-
-
-# ##  NUMBER OF GENES PER CLUSTER 
-# fig, ax = plt.subplots(figsize=(4, 4))
-# obs = pd.DataFrame(adata.obs)
-# ax = sns.violinplot(data = obs, 
-#               x='leiden',
-#               y='n_genes',  inner = None, 
-#               linecolor = 'black',   palette= 'tab20b',  linewidth= 1.5,  width = 1.5, 
-#              stripplot=False,  save = 'total_counts_n_genes_per_cluster_SI.pdf', grid = False)
-# # Calculate means
-# group_means = obs.groupby('leiden')['n_genes'].mean()
-# # Add mean values to the plot
-# for i, (group, mean_value) in enumerate(group_means.items()):
-#     ax.text(
-#         i,  # x-coordinate at the center of the violin
-#         mean_value + 3800,  # y-coordinate slightly above the violin (adjust if necessary)
-#         f'{mean_value:.1f}',  # Format mean value
-#         ha='center',  # Horizontal alignment
-#         va='bottom',  # Vertical alignment
-#         fontsize=5,   # Font size
-#         color='black' # Text color
-#     )
-# ax.tick_params(axis='x', rotation=90)
-# plt.ylabel('Number of genes', fontsize =15)
-# plt.ylim(0,5000) 
-# plt.savefig('/Users/Sebastian/Documentos/SLCU_lab/Projects/scRNA-seq/repositories/moreno_etal_2024/figures/number_genes.pdf', bbox_inches='tight')
-# plt.show()
-
 
